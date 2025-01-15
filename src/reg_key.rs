@@ -1005,6 +1005,31 @@ impl RegKey {
     }
 }
 
+impl RegKey {
+    /// Notifies the caller about changes to the attributes or contents of a specified registry key.
+    /// This function detects a single change.
+    /// After the caller receives a notification event, it should call the function again to receive the next notification.
+    pub fn notify_change_key_value(
+        &self,
+        watch_subtree: bool,
+        notify_filter: Registry::REG_NOTIFY_FILTER,
+        asynchronous_event: Option<Foundation::HANDLE>,
+    ) -> io::Result<()> {
+        match unsafe {
+            Registry::RegNotifyChangeKeyValue(
+                self.hkey,
+                watch_subtree as i32,
+                notify_filter,
+                asynchronous_event.unwrap_or(ptr::null_mut()),
+                asynchronous_event.is_some() as i32,
+            )
+        } {
+            0 => Ok(()),
+            err => werr!(err),
+        }
+    }
+}
+
 impl Drop for RegKey {
     fn drop(&mut self) {
         self.close_().unwrap_or(());
